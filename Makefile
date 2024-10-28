@@ -15,3 +15,6 @@ status:
 
 commit:
 	git commit -m "Commits"
+
+branch:
+	git branch
