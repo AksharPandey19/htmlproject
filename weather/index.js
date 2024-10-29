@@ -1,77 +1,123 @@
-const container = document.querySelector('.container');
-const search = document.querySelector('.search-box button');
-const weatherBox = document.querySelector('.weather-box');
-const weatherDetails = document.querySelector('.weather-details');
-const error404 = document.querySelector('.not-found');
+const apiKey = '5796abbde9106b7da4febfae8c44c232';
+const locButton = document.querySelector('.loc-button');
+const todayInfo = document.querySelector('.today-info');
+const todayWeatherIcon = document.querySelector('.today-weather i');
+const todayTemp = document.querySelector('.weather-temp');
+const daysList = document.querySelector('.days-list');
 
-search.addEventListener('click', () => {
+// Mapping of weather condition codes to icon class names (Depending on Openweather Api Response)
+const weatherIconMap = {
+    '01d': 'sun',
+    '01n': 'moon',
+    '02d': 'sun',
+    '02n': 'moon',
+    '03d': 'cloud',
+    '03n': 'cloud',
+    '04d': 'cloud',
+    '04n': 'cloud',
+    '09d': 'cloud-rain',
+    '09n': 'cloud-rain',
+    '10d': 'cloud-rain',
+    '10n': 'cloud-rain',
+    '11d': 'cloud-lightning',
+    '11n': 'cloud-lightning',
+    '13d': 'cloud-snow',
+    '13n': 'cloud-snow',
+    '50d': 'water',
+    '50n': 'water'
+};
 
-    const APIKey = '5796abbde9106b7da4febfae8c44c232';
-    const city = document.querySelector('.search-box input').value;
+function fetchWeatherData(location) {
+    // Construct the API url with the location and api key
+    const apiUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${location}&appid=${apiKey}&units=metric`;
 
-    if (city === '')
-        return;
+    // Fetch weather data from api
+    fetch(apiUrl).then(response => response.json()).then(data => {
+        // Update todays info
+        const todayWeather = data.list[0].weather[0].description;
+        const todayTemperature = `${Math.round(data.list[0].main.temp)}°C`;
+        const todayWeatherIconCode = data.list[0].weather[0].icon;
 
-    fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${APIKey}`)
-        .then(response => response.json())
-        .then(json => {
+        todayInfo.querySelector('h2').textContent = new Date().toLocaleDateString('en', { weekday: 'long' });
+        todayInfo.querySelector('span').textContent = new Date().toLocaleDateString('en', { day: 'numeric', month: 'long', year: 'numeric' });
+        todayWeatherIcon.className = `bx bx-${weatherIconMap[todayWeatherIconCode]}`;
+        todayTemp.textContent = todayTemperature;
 
-            if (json.cod === '404') {
-                container.style.height = '400px';
-                weatherBox.style.display = 'none';
-                weatherDetails.style.display = 'none';
-                error404.style.display = 'block';
-                error404.classList.add('fadeIn');
-                return;
+        // Update location and weather description in the "left-info" section
+        const locationElement = document.querySelector('.today-info > div > span');
+        locationElement.textContent = `${data.city.name}, ${data.city.country}`;
+
+        const weatherDescriptionElement = document.querySelector('.today-weather > h3');
+        weatherDescriptionElement.textContent = todayWeather;
+
+        // Update todays info in the "day-info" section
+        const todayPrecipitation = `${data.list[0].pop}%`;
+        const todayHumidity = `${data.list[0].main.humidity}%`;
+        const todayWindSpeed = `${data.list[0].wind.speed} km/h`;
+
+        const dayInfoContainer = document.querySelector('.day-info');
+        dayInfoContainer.innerHTML = `
+
+            <div>
+                <span class="title">PRECIPITATION</span>
+                <span class="value">${todayPrecipitation}</span>
+            </div>
+            <div>
+                <span class="title">HUMIDITY</span>
+                <span class="value">${todayHumidity}</span>
+            </div>
+            <div>
+                <span class="title">WIND SPEED</span>
+                <span class="value">${todayWindSpeed}</span>
+            </div>
+
+        `;
+
+        // Update next 4 days weather
+        const today = new Date();
+        const nextDaysData = data.list.slice(1);
+
+        const uniqueDays = new Set();
+        let count = 0;
+        daysList.innerHTML = '';
+        for (const dayData of nextDaysData) {
+            const forecastDate = new Date(dayData.dt_txt);
+            const dayAbbreviation = forecastDate.toLocaleDateString('en', { weekday: 'short' });
+            const dayTemp = `${Math.round(dayData.main.temp)}°C`;
+            const iconCode = dayData.weather[0].icon;
+
+            // Ensure the day isn't duplicate and today
+            if (!uniqueDays.has(dayAbbreviation) && forecastDate.getDate() !== today.getDate()) {
+                uniqueDays.add(dayAbbreviation);
+                daysList.innerHTML += `
+                
+                    <li>
+                        <i class='bx bx-${weatherIconMap[iconCode]}'></i>
+                        <span>${dayAbbreviation}</span>
+                        <span class="day-temp">${dayTemp}</span>
+                    </li>
+
+                `;
+                count++;
             }
 
-            error404.style.display = 'none';
-            error404.classList.remove('fadeIn');
+            // Stop after getting 5 distinct days
+            if (count === 5) break;
+        }
+    }).catch(error => {
+        alert(`Error fetching weather data: ${error} (Api Error)`);
+    });
+}
 
-            const image = document.querySelector('.weather-box img');
-            const temperature = document.querySelector('.weather-box .temperature');
-            const description = document.querySelector('.weather-box .description');
-            const humidity = document.querySelector('.weather-details .humidity span');
-            const wind = document.querySelector('.weather-details .wind span');
+// Fetch weather data on document load for default location (Greater Noida)
+document.addEventListener('DOMContentLoaded', () => {
+    const defaultLocation = 'Greater Noida';
+    fetchWeatherData(defaultLocation);
+});
 
-            switch (json.weather[0].main) {
-                case 'Clear':
-                    image.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAAQBJREFUaN7t2csNwyAMBmBGYYSMwhgdgxEYjRW6ARu4HNyqB0CKednElf5b2/hLSALGAICRHKMABSjgUMDdD7xfLifkxByoJOJ33O3/nwHIhVgsKDWKriXhb+0WQD6wJxZegvhlADzrcUDhpeFlpwLyAa5BZ711Na4pgAXFNxFdABw2K4r/R9iRgLiw+N89MQSATxvYFN8F2DB0qkOJCggbi/8m9AASA0AiAXBuA0ziKIDACBAogMgIECkAYBUFKEABzwOIf4yKf5HJnkqIn8wxmk775y5oxC8pj1jUH9FWEd/YOqK1eERz94j2euFqUCF7NzjYbzHpLqUCFKCAJfkAq7RimK7qUtAAAAAASUVORK5CYII=';
-                    break;
+locButton.addEventListener('click', () => {
+    const location = prompt('Enter a location :');
+    if (!location) return;
 
-                case 'Rain':
-                    image.src = 'rain.png';
-                    break;
-
-                case 'Snow':
-                    image.src = 'snowy.png';
-                    break;
-
-                case 'Clouds':
-                    image.src = 'https://ssl.gstatic.com/onebox/weather/64/partly_cloudy.png';
-                    break;
-
-                case 'Haze':
-                    image.src = 'mist.png';
-                    break;
-
-                default:
-                    image.src = '';
-            }
-
-            temperature.innerHTML = `${parseInt(json.main.temp)}<span>°C</span>`;
-            description.innerHTML = `${json.weather[0].description}`;
-            humidity.innerHTML = `${json.main.humidity}%`;
-            wind.innerHTML = `${parseInt(json.wind.speed)}Km/h`;
-
-            weatherBox.style.display = '';
-            weatherDetails.style.display = '';
-            weatherBox.classList.add('fadeIn');
-            weatherDetails.classList.add('fadeIn');
-            container.style.height = '590px';
-
-
-        });
-
-
+    fetchWeatherData(location);
 });
