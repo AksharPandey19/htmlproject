@@ -930,8 +930,8 @@ Game = {
       }
 
       Game.score = 0;
-      Game.lives = 2;
-      Game.totalAsteroids = 2;
+      Game.lives = 3;
+      Game.totalAsteroids = 5;
       Game.spawnAsteroids();
 
       Game.nextBigAlienTime = Date.now() + 30000 + (30000 * Math.random());
@@ -947,6 +947,8 @@ Game = {
         Game.ship.vel.y = 0;
         Game.ship.visible = true;
         this.state = 'run';
+      } else {
+        Text.renderText(window.ipad ? 'There is an Astroid in spawn' : 'Please Wait', 36, Game.canvasWidth/2 - 270, Game.canvasHeight/2);
       }
     },
     run: function () {
@@ -978,14 +980,14 @@ Game = {
       }
     },
     player_died: function () {
-      if (Game.lives < 0) {
+      if (Game.lives == 0) {
         this.state = 'end_game';
       } else {
         if (this.timer == null) {
           this.timer = Date.now();
         }
-        // wait a second before spawning
-        if (Date.now() - this.timer > 1000) {
+        // wait a 1 milliseconds before spawning
+        if (Date.now() - this.timer > 1) {
           this.timer = null;
           this.state = 'spawn_ship';
         }
