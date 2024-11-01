@@ -853,7 +853,7 @@ for (var sfx in SFX) {
           audio.play();
         } else {
           audio.muted = false;
-          audio.currentTime = 0;
+          audio.play();
         }
       }
       return audio;
@@ -914,7 +914,7 @@ Game = {
     waiting: function () {
       Text.renderText(window.ipad ? 'Touch Screen to Start' : 'Press Space to Start', 36, Game.canvasWidth/2 - 270, Game.canvasHeight/2);
       if (KEY_STATUS.space || window.gameStart) {
-        KEY_STATUS.space = false; // hack so we don't shoot right away
+        KEY_STATUS.space =  false; //so we don't shoot right away
         window.gameStart = false;
         this.state = 'start';
       }
@@ -1003,10 +1003,8 @@ Game = {
         this.timer = null;
         this.state = 'waiting';
       }
-
       window.gameStart = false;
     },
-
     execute: function () {
       this[this.state]();
     },
