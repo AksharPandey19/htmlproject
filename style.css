@@ -5,12 +5,18 @@
     box-sizing: border-box;
 }
 
+
 body {
-    font-family: 'Inter', sans-serif;
-    background-color: #0a192f; /* Dark Background */
-    color: #ccd6f6; /* Light Text */
-    line-height: 1.6;
+  font-family: 'Inter', sans-serif;
+  background-color: #0a192f; /* Dark Background */
+  color: #ccd6f6; /* Light Text */
+  line-height: 1.6;
 }
+
+
+
+
+
 
 a {
     text-decoration: none;
