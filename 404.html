@@ -1,43 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>404 Not Found Page</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
-    <link rel="stylesheet" href="https://htmlproject-seven.vercel.app/styles.css" />
-
-  </head>
-  <body>
-  <div class="center">
-  <section class="error">
-    <h1 class="error__title">404</h1>
-    <h2 class="error__type">Page not found</h2>
-    <p class="error__cta">We’re sorry, the page you have looked for does not exist in our database! Maybe go to our <a class="error__link error__link--purple" href="index.html" target="_blank">home page</a></p>
-  </section>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDK 404</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<h1>404</h1>
+<div class="cloak__wrapper">
+    <div class="cloak__container">
+        <div class="cloak"></div>
+    </div>
 </div>
-<div class="astronaut">
-  <img src="https://images.vexels.com/media/users/3/152639/isolated/preview/506b575739e90613428cdb399175e2c8-space-astronaut-cartoon-by-vexels.png" alt="" class="src">
-</div>
-<script>document.addEventListener("DOMContentLoaded",function(){
-
-    var body=document.body;
-     setInterval(createStar,100);
-     function createStar(){
-       var right=Math.random()*500;
-       var top=Math.random()*screen.height;
-       var star=document.createElement("div");
-    star.classList.add("star")
-     body.appendChild(star);
-     setInterval(runStar,10);
-       star.style.top=top+"px";
-     function runStar(){
-       if(right>=screen.width){
-         star.remove();
-       }
-       right+=3;
-       star.style.right=right+"px";
-     }
-     }
-   })</script>
-  </body>
+<div class="info">
+    <h2>We can't find that page</h2>
+    <p>We're fairly sure that page used to be here, but seems to have gone missing. We do apologise on it's behalf.</p><a href="index.html" target="_blank" rel="noreferrer noopener">Home</a></div>
+</body>
 </html>

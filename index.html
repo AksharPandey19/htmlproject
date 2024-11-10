@@ -26,10 +26,11 @@
             <div class="logo">
                 <h1>Akshar Pandey</h1>
             </div>
-            <ul class="nav-links">
+            <ul class="nav-links" id="nav-links">
                 <li><a href="#about">About</a></li>
                 <li><a href="#projects">Projects</a></li>
                 <li><a href="#contact">Contact</a></li>
+                <li id="login-link"><a href="login.html">Login</a></li>
             </ul>
         </div>
         <div class="intro">
@@ -452,7 +453,36 @@
             console.log('callback - particles.js config loaded');
         });
         document.getElementById("year").innerHTML = new Date().getFullYear();
-        </script>
-        
+      
+    </script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        const userEmail = getQueryParam("email");
+
+        const navLinks = document.getElementById("nav-links");
+
+        if (userEmail && navLinks) {
+
+            const loginLink = document.getElementById("login-link");
+
+            if (loginLink) {
+                loginLink.remove();
+            }
+
+            const emailItem = document.createElement("li");
+            emailItem.textContent = `${decodeURIComponent(userEmail)}`;
+            navLinks.appendChild(emailItem);
+        } else {
+            console.log("No user email or nav-links not found."); // Debugging output
+        }
+    });
+
+</script>
+
 </body>
 </html>
