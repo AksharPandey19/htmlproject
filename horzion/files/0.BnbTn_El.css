@@ -819,6 +819,12 @@ body {
 .text-center {
   text-align: center;
 }
+@media (max-width: 438px) {
+  .text-center {
+    margin-bottom: 120px;
+  }
+}
+
 .align-middle {
   vertical-align: middle;
 }
