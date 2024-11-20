@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dropify Animation</title>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+    canvas { display: block; }
+    #button-container {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      text-align: center;
+      color: white;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    #small-text {
+      color: white;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="button-container">
+    <button onclick="window.location.href='#projects'">My Work</button>
+    <div id="small-text">Check out my awesome projects!</div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/loaders/FontLoader.js"></script>
+  <script>
+    // Scene setup
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Create a basic text geometry for "Dropify"
+const loader = new THREE.FontLoader();
+let textMesh;
+let cars = [];
+let carSpeed = 0.05; // Speed of cars moving
+
+loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+  const geometry = new THREE.TextGeometry('Dropify', {
+    font: font,
+    size: 10,
+    height: 1
+  });
+  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  textMesh = new THREE.Mesh(geometry, material);
+  textMesh.position.set(-50, 0, 0);  // Position the text
+  scene.add(textMesh);
+
+  // Create cars (simple cubes for now)
+  createCars();
+});
+
+// Create cars that will move inside the "L" of "Dropify"
+function createCars() {
+  for (let i = 0; i < 3; i++) {
+    const carGeometry = new THREE.BoxGeometry(2, 1, 1);
+    const carMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const car = new THREE.Mesh(carGeometry, carMaterial);
+    car.position.set(-45, 1, 0);  // Start position inside the "L"
+    cars.push(car);
+    scene.add(car);
+  }
+}
+
+// Camera setup
+camera.position.z = 100;
+
+// Handle scroll to disable during animation
+let isAnimationComplete = false;
+
+window.addEventListener('wheel', function(e) {
+  if (!isAnimationComplete) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+// Button reveal after animation
+function showButton() {
+  document.getElementById('button-container').style.display = 'block';
+}
+
+// Animation variables
+let moveCars = false;
+let zoomInProgress = false;
+
+function animate() {
+  requestAnimationFrame(animate);
+  // Update the cars' position
+  if (moveCars) {
+    cars.forEach(car => {
+      car.position.x += carSpeed;
+      if (car.position.x > -25) {
+        carSpeed = 0; // Stop the cars once they reach the target
+        moveCars = false;
+        setTimeout(() => {
+          zoomInProgress = true; // Zoom into the letter "I"
+        }, 1000); // Delay zooming in after cars stop
+      }
+    });
+  }
+
+  // Zoom into the letter "I"
+  if (zoomInProgress) {
+    camera.position.z -= 0.5; // Gradually zoom in
+    if (camera.position.z <= 20) {
+      isAnimationComplete = true;
+      showButton(); // Show the button when zooming is done
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+
+// Start the animation loop
+animate();
+
+// Start the animation after a slight delay
+setTimeout(() => {
+  moveCars = true;
+}, 500); // Start moving the cars after 500ms
+
+// Resize handler
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+  </script>
+</body>
+</html>
