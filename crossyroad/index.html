@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crossy Road Clone</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        #instructions {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-family: Arial;
+            font-size: 14px;
+            padding: 10px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 5px;
+        }
+        #score {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            color: white;
+            font-family: Arial;
+            font-size: 20px;
+            padding: 10px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 5px;
+        }
+        #gameOver {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-family: Arial;
+            font-size: 48px;
+            text-align: center;
+            background: rgba(0,0,0,0.7);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions">Use arrow keys or WASD to move</div>
+    <div id="score">Score: 0</div>
+    <div id="gameOver">
+        Game Over!<br>
+        <button onclick="location.reload()">Play Again</button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, player;
+        let lanes = [];
+        let score = 0;
+        let isGameOver = false;
+        const LANE_WIDTH = 5;
+        const LANE_COUNT = 10;
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            directionalLight.position.set(10, 20, 0);
+            scene.add(directionalLight);
+
+            // Create player
+            const playerGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+            const playerMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+            player = new THREE.Mesh(playerGeometry, playerMaterial);
+            player.position.set(0, 0.4, 0);
+            scene.add(player);
+
+            // Create initial lanes
+            for (let i = 0; i < LANE_COUNT; i++) {
+                createLane(i * LANE_WIDTH);
+            }
+
+            // Position camera
+            camera.position.set(0, 10, 15);
+            camera.lookAt(player.position);
+
+            // Event listeners
+            document.addEventListener('keydown', onKeyDown);
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        function createLane(z) {
+            const laneType = Math.random() < 0.7 ? 'road' : 'grass';
+            const lane = {
+                type: laneType,
+                z: z,
+                obstacles: []
+            };
+
+            // Create ground
+            const groundGeometry = new THREE.PlaneGeometry(10, LANE_WIDTH);
+            const groundMaterial = new THREE.MeshPhongMaterial({ 
+                color: laneType === 'road' ? 0x444444 : 0x55aa55,
+                side: THREE.DoubleSide
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.z = z + LANE_WIDTH / 2;
+            scene.add(ground);
+            lane.ground = ground;
+
+            // Add road markings if it's a road
+            if (laneType === 'road') {
+                const lineGeometry = new THREE.PlaneGeometry(0.5, LANE_WIDTH);
+                const lineMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xffffff,
+                    side: THREE.DoubleSide
+                });
+                const line = new THREE.Mesh(lineGeometry, lineMaterial);
+                line.rotation.x = -Math.PI / 2;
+                line.position.set(0, 0.01, z + LANE_WIDTH / 2);
+                scene.add(line);
+
+                // Add cars
+                const carCount = Math.floor(Math.random() * 2) + 1; // 1-2 cars per lane
+                for (let i = 0; i < carCount; i++) {
+                    createObstacle(lane);
+                }
+            }
+
+            lanes.push(lane);
+        }
+
+        function createObstacle(lane) {
+            const car = createCar();
+            
+            car.position.x = Math.random() * 16 - 8;
+            car.position.y = 0;
+            car.position.z = lane.z + LANE_WIDTH / 2;
+            
+            // Rotate car based on direction
+            const speed = (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1);
+            if (speed < 0) {
+                car.rotation.y = Math.PI;
+            }
+            
+            scene.add(car);
+            lane.obstacles.push({
+                mesh: car,
+                speed: speed
+            });
+        }
+
+        function createCar() {
+            const car = new THREE.Group();
+            
+            // Car body
+            const bodyGeometry = new THREE.BoxGeometry(2, 1, 4);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ color: Math.random() > 0.5 ? 0xff0000 : 0x00ff00 });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.5;
+            car.add(body);
+
+            // Car top
+            const topGeometry = new THREE.BoxGeometry(1.5, 0.8, 2);
+            const topMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            const top = new THREE.Mesh(topGeometry, topMaterial);
+            top.position.y = 1.4;
+            car.add(top);
+
+            // Wheels
+            const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.3, 12);
+            const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            
+            // Front left wheel
+            const wheel1 = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheel1.rotation.z = Math.PI / 2;
+            wheel1.position.set(-1.1, 0.3, -1);
+            car.add(wheel1);
+
+            // Front right wheel
+            const wheel2 = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheel2.rotation.z = Math.PI / 2;
+            wheel2.position.set(1.1, 0.3, -1);
+            car.add(wheel2);
+
+            // Back left wheel
+            const wheel3 = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheel3.rotation.z = Math.PI / 2;
+            wheel3.position.set(-1.1, 0.3, 1);
+            car.add(wheel3);
+
+            // Back right wheel
+            const wheel4 = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheel4.rotation.z = Math.PI / 2;
+            wheel4.position.set(1.1, 0.3, 1);
+            car.add(wheel4);
+
+            return car;
+        }
+
+        function onKeyDown(event) {
+            if (isGameOver) return;
+
+            const moveDistance = 2;
+            let moved = false;
+
+            switch(event.key) {
+                case 'ArrowUp':
+                case 'w':
+                    player.position.z -= moveDistance;
+                    moved = true;
+                    break;
+                case 'ArrowDown':
+                case 's':
+                    player.position.z += moveDistance;
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                    player.position.x -= moveDistance;
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                    player.position.x += moveDistance;
+                    break;
+            }
+
+            if (moved) {
+                score++;
+                document.getElementById('score').textContent = `Score: ${score}`;
+            }
+
+            // Keep player within bounds
+            player.position.x = Math.max(-5, Math.min(5, player.position.x));
+            
+            // Update camera
+            camera.position.z = player.position.z + 15;
+            camera.lookAt(player.position);
+        }
+
+        function updateObstacles() {
+            lanes.forEach(lane => {
+                if (lane.type === 'road') {
+                    lane.obstacles.forEach(obstacle => {
+                        obstacle.mesh.position.x += obstacle.speed;
+                        if (obstacle.mesh.position.x > 8) obstacle.mesh.position.x = -8;
+                        if (obstacle.mesh.position.x < -8) obstacle.mesh.position.x = 8;
+
+                        // Collision detection
+                        if (!isGameOver && checkCollision(player, obstacle.mesh)) {
+                            gameOver();
+                        }
+                    });
+                }
+            });
+        }
+
+        function checkCollision(obj1, obj2) {
+            const dx = obj1.position.x - obj2.position.x;
+            const dz = obj1.position.z - obj2.position.z;
+            return Math.abs(dx) < 1.5 && Math.abs(dz) < 2;
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updateObstacles();
+            renderer.render(scene, camera);
+        }
+
+        init();
+        animate();
+    </script>
+</body>
+</html>

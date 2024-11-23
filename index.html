@@ -1,4 +1,13 @@
-<html lang="en">
+<div id="loader-wrapper">
+  <div id="loader"></div>
+  
+  <div class="loader-section section-left"></div>
+  <div class="loader-section section-right"></div>
+  
+</div>
+
+<div id="content" style="display: none;">
+  <html lang="en">
   <div id="countdown">
     <p>Countdown to Christmas:</p>
     <div id="timer"></div>
@@ -6,6 +15,48 @@
   
   <div class="main">
     <div class="initial-snow">
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
+      <div class="snow">&#10052;</div>
       <div class="snow">&#10052;</div>
       <div class="snow">&#10052;</div>
       <div class="snow">&#10052;</div>
@@ -959,8 +1010,8 @@ button:hover .star-6 {
     
 </head>
 
-<body data-new-gr-c-s-check-loaded="14.1207.0" data-gr-ext-installed=""><div id="particles-js"><canvas class="particles-js-canvas-el" width="1172" height="957" style="width: 100%; height: 100%;"></canvas></div>
-    <header>
+<body data-new-gr-c-s-check-loaded="14.1207.0" data-gr-ext-installed=""><div id="particles-js"><canvas class="particles-js-canvas-el" width="1172" height="957" style="width: 100%; height: 100%;"></canvas></div>  
+  <header>
       <div class="container">
         <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="350" class="santa" style="    top: -300px;
         position: absolute;" height="400">
@@ -1543,11 +1594,17 @@ button:hover .star-6 {
 
 // Update the countdown every second
 setInterval(updateCountdown, 1000);
-
-
 </script>
-
-
-
-
+<script>
+  window.addEventListener('load', function() {
+      // Wait for 1 second after page load
+      setTimeout(function() {
+          // Hide loader
+          document.getElementById('loader-wrapper').classList.add('loader-hidden');
+          // Show content
+          document.getElementById('content').style.display = 'block';
+      }, 2500);
+  });
+  </script>
 </body></html>
+</div>
