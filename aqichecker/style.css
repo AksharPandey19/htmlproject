@@ -1,0 +1,124 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: #f0f2f5;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 600px;
+}
+
+h1 {
+    color: #1a73e8;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.search-box {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+input {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+input:focus {
+    outline: none;
+    border-color: #1a73e8;
+}
+
+button {
+    padding: 12px 24px;
+    background: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #1557b0;
+}
+
+.aqi-card {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.aqi-value {
+    font-size: 3.5rem;
+    font-weight: bold;
+    margin: 1rem 0;
+}
+
+.aqi-status {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+    padding: 8px;
+    border-radius: 6px;
+}
+
+.pollutants {
+    margin-top: 2rem;
+}
+
+.pollutant-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.pollutant-item {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.hidden {
+    display: none;
+}
+
+/* AQI Status Colors */
+.good { background-color: #a8e6cf; color: #1d4d4f; }
+.moderate { background-color: #ffd3b6; color: #8c3103; }
+.unhealthy { background-color: #ffaaa5; color: #7c1d1d; }
+.very-unhealthy { background-color: #ff8b94; color: #6e1423; }
+.hazardous { background-color: #a41623; color: white; }
+
+#loading {
+    text-align: center;
+    padding: 1rem;
+    color: #666;
+}
+
+#error {
+    color: #d32f2f;
+    text-align: center;
+    padding: 1rem;
+}
