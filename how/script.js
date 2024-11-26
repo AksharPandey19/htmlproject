@@ -15,15 +15,22 @@ function handleMove(choice) {
         makeOnlineMove(choice);
     }
 }
-
-// Updated online game functions
 function createOnlineGame() {
+    // First check if we have database connection
+    if (!database || !database.ref) {
+        alert('Cannot connect to game server. Please check your internet connection.');
+        return;
+    }
+
     playerId = 'player1';
     gameId = Math.random().toString(36).substring(2, 15);
     
     const gameRef = database.ref(`games/${gameId}`);
+    
+    // Add error handling and connection verification
     gameRef.set({
         status: 'waiting',
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
         player1: {
             connected: true,
             choice: null
@@ -33,11 +40,38 @@ function createOnlineGame() {
             choice: null
         },
         result: null
-    });
+    }).then(() => {
+        // Verify the game was created
+        return gameRef.once('value');
+    }).then((snapshot) => {
+        if (!snapshot.exists()) {
+            throw new Error('Game creation failed');
+        }
+        
+        document.getElementById('gameCode').textContent = `Game Code: ${gameId}`;
+        document.getElementById('onlineStatus').textContent = 'Waiting for opponent...';
+        
+        // Set up connection monitoring
+        const connectedRef = database.ref('.info/connected');
+        connectedRef.on('value', (snap) => {
+            if (snap.val() === true) {
+                // We're connected (or reconnected)
+                gameRef.child('player1').update({ connected: true });
+                
+                // When we disconnect, remove the game
+                gameRef.onDisconnect().remove();
+            } else {
+                document.getElementById('onlineStatus').textContent = 'Connecting...';
+            }
+        });
 
-    document.getElementById('gameCode').textContent = `Game Code: ${gameId}`;
-    document.getElementById('onlineStatus').textContent = 'Waiting for opponent...';
-    listenToGame(gameId);
+        listenToGame(gameId);
+    }).catch((error) => {
+        console.error('Game creation error:', error);
+        alert('Failed to create game. Please try again.');
+        gameId = null;
+        playerId = null;
+    });
 }
 
 function joinGame() {
