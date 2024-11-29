@@ -41,7 +41,6 @@ function createOnlineGame() {
         },
         result: null
     }).then(() => {
-        // Verify the game was created
         return gameRef.once('value');
     }).then((snapshot) => {
         if (!snapshot.exists()) {
