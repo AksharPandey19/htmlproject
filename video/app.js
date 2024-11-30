@@ -12,11 +12,6 @@ const servers = {
                 'stun:stun1.l.google.com:19302',
                 'stun:stun2.l.google.com:19302'
             ]
-        },
-        {  // Add TURN server for better connectivity
-            urls: 'turn:turn.example.com:3478',
-            username: 'username',
-            credential: 'password'
         }
     ]
 };
@@ -39,181 +34,135 @@ const audioButton = document.getElementById('audioButton');
 async function init() {
     try {
         localStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            },
+            video: true,
             audio: true
         });
         localVideo.srcObject = localStream;
-        console.log('Got local stream');
     } catch (err) {
         console.error('Error getting media:', err);
-        // Show avatar if camera access fails
         localAvatar.classList.remove('hidden');
     }
 }
 
-async function createPeerConnection() {
+async function createRoom() {
+    roomId = roomInput.value || Math.random().toString(36).substring(7);
+    roomInput.value = roomId;
+
     peerConnection = new RTCPeerConnection(servers);
     
     // Add local tracks
     localStream.getTracks().forEach(track => {
         peerConnection.addTrack(track, localStream);
-        console.log('Added local track:', track.kind);
     });
 
-    // Handle remote tracks
-    peerConnection.ontrack = event => {
-        console.log('Received remote track:', event.track.kind);
-        remoteStream = event.streams[0];
-        remoteVideo.srcObject = remoteStream;
-        
-        // Handle remote video state
-        if (event.track.kind === 'video') {
-            event.track.onmute = () => {
-                remoteAvatar.classList.remove('hidden');
-            };
-            event.track.onunmute = () => {
-                remoteAvatar.classList.add('hidden');
-            };
-        }
+    // Handle incoming tracks
+    peerConnection.ontrack = ({ streams: [stream] }) => {
+        remoteVideo.srcObject = stream;
     };
 
-    // Handle connection state
-    peerConnection.onconnectionstatechange = () => {
-        console.log('Connection state:', peerConnection.connectionState);
-        if (peerConnection.connectionState === 'connected') {
-            console.log('Peers connected successfully');
-        }
-    };
-
-    // Handle ICE state
-    peerConnection.oniceconnectionstatechange = () => {
-        console.log('ICE state:', peerConnection.iceConnectionState);
-    };
-
-    // Handle ICE candidates
+    // Collect ICE candidates
     peerConnection.onicecandidate = event => {
         if (event.candidate) {
-            const candidatePath = peerConnection.localDescription.type === 'offer' 
-                ? 'offerCandidates' 
-                : 'answerCandidates';
-            database.ref(`rooms/${roomId}/${candidatePath}`).push(event.candidate.toJSON());
+            addCandidate('offerCandidates', event.candidate.toJSON());
         }
     };
-}
 
-async function createRoom() {
-    try {
-        roomId = Math.random().toString(36).substring(7);
-        roomInput.value = roomId;
-        console.log('Creating room:', roomId);
+    // Create offer
+    const offerDescription = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offerDescription);
 
-        await createPeerConnection();
+    const roomWithOffer = {
+        offer: {
+            type: offerDescription.type,
+            sdp: offerDescription.sdp
+        }
+    };
 
-        // Create offer
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        console.log('Created offer');
+    await database.ref(`rooms/${roomId}`).set(roomWithOffer);
 
-        // Save offer to database
-        const roomRef = database.ref(`rooms/${roomId}`);
-        await roomRef.set({
-            'offer': {
-                type: offer.type,
-                sdp: offer.sdp
-            }
-        });
+    // Listen for answer
+    database.ref(`rooms/${roomId}/answer`).on('value', async snapshot => {
+        const data = snapshot.val();
+        if (data && !peerConnection.currentRemoteDescription) {
+            const answerDescription = new RTCSessionDescription(data);
+            await peerConnection.setRemoteDescription(answerDescription);
+        }
+    });
 
-        // Listen for answer
-        roomRef.child('answer').on('value', async snapshot => {
-            const answer = snapshot.val();
-            if (answer && !peerConnection.currentRemoteDescription) {
-                console.log('Setting remote description (answer)');
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-            }
-        });
+    // Listen for answer candidates
+    database.ref(`rooms/${roomId}/answerCandidates`).on('child_added', snapshot => {
+        const candidate = snapshot.val();
+        if (candidate) {
+            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+    });
 
-        // Listen for answer candidates
-        roomRef.child('answerCandidates').on('child_added', async snapshot => {
-            const candidate = snapshot.val();
-            if (candidate && peerConnection.remoteDescription) {
-                console.log('Adding answer candidate');
-                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-            }
-        });
-
-        // Update remote video state when peer toggles their video
-        listenToRemoteVideoState();
-
-        alert(`Room created: ${roomId}`);
-    } catch (err) {
-        console.error('Error creating room:', err);
-    }
+    alert(`Room Created: ${roomId}`);
 }
 
 async function joinRoom() {
-    try {
-        roomId = roomInput.value;
-        if (!roomId) {
-            alert('Please enter a room ID');
-            return;
-        }
-        console.log('Joining room:', roomId);
-
-        await createPeerConnection();
-
-        const roomRef = database.ref(`rooms/${roomId}`);
-        const roomSnapshot = await roomRef.get();
-
-        if (!roomSnapshot.exists()) {
-            alert('Room does not exist');
-            return;
-        }
-
-        // Get the offer
-        const offer = roomSnapshot.val().offer;
-        if (offer) {
-            console.log('Setting remote description (offer)');
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-
-            // Create answer
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            console.log('Created answer');
-
-            // Save answer
-            await roomRef.update({
-                'answer': {
-                    type: answer.type,
-                    sdp: answer.sdp
-                }
-            });
-        }
-
-        // Listen for offer candidates
-        roomRef.child('offerCandidates').on('child_added', async snapshot => {
-            const candidate = snapshot.val();
-            if (candidate && peerConnection.remoteDescription) {
-                console.log('Adding offer candidate');
-                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-            }
-        });
-
-        // Update remote video state when peer toggles their video
-        listenToRemoteVideoState();
-
-    } catch (err) {
-        console.error('Error joining room:', err);
+    roomId = roomInput.value;
+    if (!roomId) {
+        alert('Please enter a room ID');
+        return;
     }
+
+    const roomRef = database.ref(`rooms/${roomId}`);
+    const roomSnapshot = await roomRef.get();
+
+    if (!roomSnapshot.exists()) {
+        alert('Room does not exist');
+        return;
+    }
+
+    peerConnection = new RTCPeerConnection(servers);
+
+    // Add local tracks
+    localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+    });
+
+    // Handle incoming tracks
+    peerConnection.ontrack = ({ streams: [stream] }) => {
+        remoteVideo.srcObject = stream;
+    };
+
+    // Collect ICE candidates
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            addCandidate('answerCandidates', event.candidate.toJSON());
+        }
+    };
+
+    // Get the offer
+    const offer = roomSnapshot.val().offer;
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+    // Create answer
+    const answerDescription = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answerDescription);
+
+    const answer = {
+        type: answerDescription.type,
+        sdp: answerDescription.sdp
+    };
+
+    await roomRef.update({ answer });
+
+    // Listen for offer candidates
+    database.ref(`rooms/${roomId}/offerCandidates`).on('child_added', snapshot => {
+        const candidate = snapshot.val();
+        if (candidate) {
+            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+    });
 }
 
-// Event listeners
-createButton.addEventListener('click', createRoom);
-joinButton.addEventListener('click', joinRoom);
-videoButton.addEventListener('click', toggleVideo);
-audioButton.addEventListener('click', toggleAudio);
+async function addCandidate(type, candidate) {
+    if (roomId) {
+        await database.ref(`rooms/${roomId}/${type}`).push(candidate);
+    }
+}
 
 function toggleVideo() {
     if (localStream) {
@@ -225,14 +174,7 @@ function toggleVideo() {
             videoButton.innerHTML = isVideoEnabled ? 
                 '<i class="fas fa-video"></i>' : 
                 '<i class="fas fa-video-slash"></i>';
-            
-            // Toggle avatar
             localAvatar.classList.toggle('hidden', isVideoEnabled);
-
-            // Notify peer about video state
-            database.ref(`rooms/${roomId}/videoState`).set({
-                enabled: isVideoEnabled
-            });
         }
     }
 }
@@ -251,14 +193,9 @@ function toggleAudio() {
     }
 }
 
-// Update remote video state when peer toggles their video
-function listenToRemoteVideoState() {
-    database.ref(`rooms/${roomId}/videoState`).on('value', (snapshot) => {
-        const state = snapshot.val();
-        if (state) {
-            remoteAvatar.classList.toggle('hidden', state.enabled);
-        }
-    });
-}
+createButton.addEventListener('click', createRoom);
+joinButton.addEventListener('click', joinRoom);
+videoButton.addEventListener('click', toggleVideo);
+audioButton.addEventListener('click', toggleAudio);
 
 window.addEventListener('load', init); 
