@@ -183,31 +183,43 @@ async function joinRoom() {
 function setupPeerConnectionHandlers() {
     peerConnection.ontrack = (event) => {
         console.log('Got remote track:', event.streams[0]);
+        // Clear any existing tracks in remoteStream
+        remoteStream.getTracks().forEach(track => {
+            remoteStream.removeTrack(track);
+        });
+        
+        // Add all tracks from the incoming stream
         event.streams[0].getTracks().forEach(track => {
-            console.log('Adding track to remote stream:', track);
+            console.log('Adding remote track:', track.kind);
             remoteStream.addTrack(track);
         });
+
+        // Ensure remote video element is updated
+        if (!remoteVideo.srcObject || remoteVideo.srcObject.id !== remoteStream.id) {
+            console.log('Updating remote video source');
+            remoteVideo.srcObject = remoteStream;
+        }
     };
 
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
-            console.log('New ICE candidate');
+            console.log('New ICE candidate:', event.candidate.type);
             const isOffer = peerConnection.localDescription.type === 'offer';
             const candidatesPath = isOffer ? 'offerCandidates' : 'answerCandidates';
             database.ref(`rooms/${roomId}/${candidatesPath}`).push(event.candidate.toJSON());
         }
     };
 
+    // Monitor connection states
     peerConnection.onconnectionstatechange = () => {
-        console.log('Connection state changed:', peerConnection.connectionState);
+        console.log('Connection state:', peerConnection.connectionState);
+        if (peerConnection.connectionState === 'connected') {
+            console.log('Peers connected!');
+        }
     };
 
     peerConnection.oniceconnectionstatechange = () => {
-        console.log('ICE connection state changed:', peerConnection.iceConnectionState);
-    };
-
-    peerConnection.onsignalingstatechange = () => {
-        console.log('Signaling state changed:', peerConnection.signalingState);
+        console.log('ICE connection state:', peerConnection.iceConnectionState);
     };
 }
 
