@@ -233,4 +233,4 @@ joinButton.addEventListener('click', joinRoom);
 videoButton.addEventListener('click', toggleVideo);
 audioButton.addEventListener('click', toggleAudio);
 
-window.addEventListener('load', init); 
+window.addEventListener('load', init);
