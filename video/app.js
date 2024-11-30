@@ -12,6 +12,11 @@ const servers = {
                 'stun:stun1.l.google.com:19302',
                 'stun:stun2.l.google.com:19302'
             ]
+        },
+        {  // Add TURN server for better connectivity
+            urls: 'turn:turn.example.com:3478',
+            username: 'username',
+            credential: 'password'
         }
     ]
 };
@@ -23,6 +28,8 @@ const database = firebase.database();
 // Get DOM elements
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
+const localAvatar = document.querySelector('.avatar-container');
+const remoteAvatar = document.querySelector('.remote-avatar-container');
 const roomInput = document.getElementById('roomId');
 const createButton = document.getElementById('createButton');
 const joinButton = document.getElementById('joinButton');
@@ -32,13 +39,18 @@ const audioButton = document.getElementById('audioButton');
 async function init() {
     try {
         localStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
             audio: true
         });
         localVideo.srcObject = localStream;
         console.log('Got local stream');
     } catch (err) {
         console.error('Error getting media:', err);
+        // Show avatar if camera access fails
+        localAvatar.classList.remove('hidden');
     }
 }
 
@@ -54,11 +66,31 @@ async function createPeerConnection() {
     // Handle remote tracks
     peerConnection.ontrack = event => {
         console.log('Received remote track:', event.track.kind);
-        if (remoteVideo.srcObject !== event.streams[0]) {
-            remoteVideo.srcObject = event.streams[0];
-            remoteStream = event.streams[0];
-            console.log('Set remote stream');
+        remoteStream = event.streams[0];
+        remoteVideo.srcObject = remoteStream;
+        
+        // Handle remote video state
+        if (event.track.kind === 'video') {
+            event.track.onmute = () => {
+                remoteAvatar.classList.remove('hidden');
+            };
+            event.track.onunmute = () => {
+                remoteAvatar.classList.add('hidden');
+            };
         }
+    };
+
+    // Handle connection state
+    peerConnection.onconnectionstatechange = () => {
+        console.log('Connection state:', peerConnection.connectionState);
+        if (peerConnection.connectionState === 'connected') {
+            console.log('Peers connected successfully');
+        }
+    };
+
+    // Handle ICE state
+    peerConnection.oniceconnectionstatechange = () => {
+        console.log('ICE state:', peerConnection.iceConnectionState);
     };
 
     // Handle ICE candidates
@@ -68,16 +100,7 @@ async function createPeerConnection() {
                 ? 'offerCandidates' 
                 : 'answerCandidates';
             database.ref(`rooms/${roomId}/${candidatePath}`).push(event.candidate.toJSON());
-            console.log('Added ICE candidate');
         }
-    };
-
-    peerConnection.onconnectionstatechange = () => {
-        console.log('Connection state:', peerConnection.connectionState);
-    };
-
-    peerConnection.oniceconnectionstatechange = () => {
-        console.log('ICE state:', peerConnection.iceConnectionState);
     };
 }
 
@@ -120,6 +143,9 @@ async function createRoom() {
                 await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
             }
         });
+
+        // Update remote video state when peer toggles their video
+        listenToRemoteVideoState();
 
         alert(`Room created: ${roomId}`);
     } catch (err) {
@@ -175,6 +201,9 @@ async function joinRoom() {
             }
         });
 
+        // Update remote video state when peer toggles their video
+        listenToRemoteVideoState();
+
     } catch (err) {
         console.error('Error joining room:', err);
     }
@@ -196,6 +225,14 @@ function toggleVideo() {
             videoButton.innerHTML = isVideoEnabled ? 
                 '<i class="fas fa-video"></i>' : 
                 '<i class="fas fa-video-slash"></i>';
+            
+            // Toggle avatar
+            localAvatar.classList.toggle('hidden', isVideoEnabled);
+
+            // Notify peer about video state
+            database.ref(`rooms/${roomId}/videoState`).set({
+                enabled: isVideoEnabled
+            });
         }
     }
 }
@@ -212,6 +249,16 @@ function toggleAudio() {
                 '<i class="fas fa-microphone-slash"></i>';
         }
     }
+}
+
+// Update remote video state when peer toggles their video
+function listenToRemoteVideoState() {
+    database.ref(`rooms/${roomId}/videoState`).on('value', (snapshot) => {
+        const state = snapshot.val();
+        if (state) {
+            remoteAvatar.classList.toggle('hidden', state.enabled);
+        }
+    });
 }
 
 window.addEventListener('load', init); 

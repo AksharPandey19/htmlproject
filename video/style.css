@@ -79,7 +79,8 @@ button:hover:not(:disabled) {
     color: #ff4444;
 }
 
-.avatar-container {
+.avatar-container,
+.remote-avatar-container {
     position: absolute;
     top: 0;
     left: 0;
@@ -91,7 +92,8 @@ button:hover:not(:disabled) {
     align-items: center;
 }
 
-.avatar-container i {
+.avatar-container i,
+.remote-avatar-container i {
     font-size: 80px;
     color: #666;
 }
@@ -115,16 +117,4 @@ button:hover:not(:disabled) {
 
 .join-section button {
     margin: 0 5px;
-}
-
-.remote-avatar-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
