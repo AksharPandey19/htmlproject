@@ -20,10 +20,33 @@
 
 .video-wrapper {
     position: relative;
+    width: 100%;
+    max-width: 600px;
     aspect-ratio: 16/9;
-    background: #f0f0f0;
+    margin: 10px;
     border-radius: 8px;
     overflow: hidden;
+    background-color: #f0f0f0;
+}
+
+.local-avatar-container,
+.remote-avatar-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f0f0;
+    z-index: 1;
+}
+
+.local-avatar-container i,
+.remote-avatar-container i {
+    font-size: 64px;
+    color: #666;
 }
 
 video {
@@ -77,25 +100,6 @@ button:hover:not(:disabled) {
 
 .controls button.disabled i.fa-microphone {
     color: #ff4444;
-}
-
-.avatar-container,
-.remote-avatar-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.avatar-container i,
-.remote-avatar-container i {
-    font-size: 80px;
-    color: #666;
 }
 
 .hidden {
