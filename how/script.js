@@ -342,4 +342,3 @@ window.addEventListener('beforeunload', () => {
         });
     }
 });
-
