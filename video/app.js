@@ -22,8 +22,6 @@ const database = firebase.database();
 // Get DOM elements
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
-const localAvatar = document.querySelector('.local-avatar-container');
-const remoteAvatar = document.querySelector('.remote-avatar-container');
 const roomInput = document.getElementById('roomId');
 const createButton = document.getElementById('createButton');
 const joinButton = document.getElementById('joinButton');
@@ -37,11 +35,9 @@ async function init() {
             audio: true
         });
         localVideo.srcObject = localStream;
-        localAvatar.classList.add('hidden');
         console.log('Local stream initialized');
     } catch (err) {
         console.error('Error getting media:', err);
-        localAvatar.classList.remove('hidden');
     }
 }
 
@@ -109,8 +105,6 @@ async function createRoom() {
         });
 
         alert(`Room Created: ${roomId}`);
-
-        handleRemoteVideoState();
     } catch (error) {
         console.error('Error in createRoom:', error);
         alert(error.message);
@@ -190,7 +184,6 @@ async function joinRoom() {
             }
         });
 
-        handleRemoteVideoState();
     } catch (error) {
         console.error('Error in joinRoom:', error);
         alert(error.message);
@@ -207,16 +200,6 @@ function toggleVideo() {
             videoButton.innerHTML = isVideoEnabled ? 
                 '<i class="fas fa-video"></i>' : 
                 '<i class="fas fa-video-slash"></i>';
-            
-            // Toggle local avatar
-            localAvatar.classList.toggle('hidden', isVideoEnabled);
-            
-            // Notify peer about video state
-            if (roomId) {
-                database.ref(`rooms/${roomId}/videoState`).set({
-                    enabled: isVideoEnabled
-                });
-            }
         }
     }
 }
@@ -235,67 +218,19 @@ function toggleAudio() {
     }
 }
 
-// Add function to handle remote video state
-function handleRemoteVideoState() {
-    if (roomId) {
-        database.ref(`rooms/${roomId}/videoState`).on('value', (snapshot) => {
-            const state = snapshot.val();
-            if (state) {
-                remoteAvatar.classList.toggle('hidden', state.enabled);
-            }
-        });
-    }
-}
-
-// Add event listener for remote video track ended
-function setupRemoteVideoHandlers() {
-    remoteVideo.addEventListener('loadedmetadata', () => {
-        console.log('Remote video loaded');
-        remoteAvatar.classList.add('hidden');
-    });
-
-    // Handle remote track ending
-    if (peerConnection) {
-        peerConnection.ontrack = event => {
-            console.log('Received remote track');
-            if (remoteVideo.srcObject !== event.streams[0]) {
-                remoteVideo.srcObject = event.streams[0];
-                
-                event.track.onended = () => {
-                    console.log('Remote track ended');
-                    remoteAvatar.classList.remove('hidden');
-                };
-
-                event.track.onunmute = () => {
-                    console.log('Remote track unmuted');
-                    remoteAvatar.classList.add('hidden');
-                };
-
-                event.track.onmute = () => {
-                    console.log('Remote track muted');
-                    remoteAvatar.classList.remove('hidden');
-                };
-            }
-        };
-    }
-}
-
-// Clean up function
-function cleanup() {
+// Clean up when leaving
+window.addEventListener('beforeunload', () => {
     if (roomId) {
         database.ref(`rooms/${roomId}`).remove();
     }
     if (peerConnection) {
         peerConnection.close();
     }
-    remoteVideo.srcObject = null;
-    remoteAvatar.classList.remove('hidden');
-}
+});
 
-// Update event listeners
-window.addEventListener('beforeunload', cleanup);
-window.addEventListener('load', init);
 createButton.addEventListener('click', createRoom);
 joinButton.addEventListener('click', joinRoom);
 videoButton.addEventListener('click', toggleVideo);
 audioButton.addEventListener('click', toggleAudio);
+
+window.addEventListener('load', init); 
