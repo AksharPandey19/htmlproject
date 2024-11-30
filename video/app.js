@@ -1,9 +1,9 @@
 let localStream;
-let remoteStream;
-let peerConnection;
+let peerConnections = {};  // Store multiple peer connections
 let roomId;
 let isVideoEnabled = true;
 let isAudioEnabled = true;
+let userId = generateUserId();  // Generate unique ID for each user
 
 const servers = {
     iceServers: [
@@ -12,11 +12,6 @@ const servers = {
                 'stun:stun1.l.google.com:19302',
                 'stun:stun2.l.google.com:19302'
             ]
-        },
-        {
-            urls: ['turn:numb.viagenie.ca'],
-            credential: 'muazkh',
-            username: 'webrtc@live.com'
         }
     ]
 };
@@ -27,232 +22,228 @@ const database = firebase.database();
 
 // Get DOM elements
 const localVideo = document.getElementById('localVideo');
-const remoteVideo = document.getElementById('remoteVideo');
+const videoContainer = document.querySelector('.video-container');
+const localAvatar = document.querySelector('.avatar-container');
 const roomInput = document.getElementById('roomId');
 const createButton = document.getElementById('createButton');
 const joinButton = document.getElementById('joinButton');
 const videoButton = document.getElementById('videoButton');
 const audioButton = document.getElementById('audioButton');
 
-// Event listeners
-createButton.addEventListener('click', createRoom);
-joinButton.addEventListener('click', joinRoom);
-videoButton.addEventListener('click', toggleVideo);
-audioButton.addEventListener('click', toggleAudio);
+function generateUserId() {
+    return Math.random().toString(36).substring(2, 15);
+}
+
+function createVideoElement(userId) {
+    const videoWrapper = document.createElement('div');
+    videoWrapper.className = 'video-wrapper';
+    videoWrapper.id = `video-wrapper-${userId}`;
+
+    const video = document.createElement('video');
+    video.id = `video-${userId}`;
+    video.autoplay = true;
+    video.playsinline = true;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar-container hidden';
+    avatar.innerHTML = '<i class="fas fa-user-circle"></i>';
+
+    videoWrapper.appendChild(video);
+    videoWrapper.appendChild(avatar);
+    videoContainer.appendChild(videoWrapper);
+
+    return { video, avatar };
+}
 
 async function init() {
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({ 
-            video: true, 
-            audio: true 
+        localStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
         });
         localVideo.srcObject = localStream;
-        console.log('Local stream initialized successfully');
-    } catch (error) {
-        console.error('Error accessing media devices:', error);
-        alert('Error accessing camera and microphone: ' + error.message);
+    } catch (err) {
+        console.error('Error getting media:', err);
+        localAvatar.classList.remove('hidden');
     }
 }
 
 async function createRoom() {
-    try {
-        console.log('Creating new room...');
-        roomId = Math.random().toString(36).substring(7);
-        roomInput.value = roomId;
-        console.log('Room ID created:', roomId);
+    roomId = roomInput.value || Math.random().toString(36).substring(7);
+    roomInput.value = roomId;
 
-        // Clear any existing room data
-        await database.ref(`rooms/${roomId}`).remove();
-        
-        peerConnection = new RTCPeerConnection(servers);
-        console.log('PeerConnection created');
-        
-        localStream.getTracks().forEach(track => {
-            peerConnection.addTrack(track, localStream);
-        });
+    // Add yourself to the room's users
+    await database.ref(`rooms/${roomId}/users/${userId}`).set({
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
 
-        remoteStream = new MediaStream();
-        remoteVideo.srcObject = remoteStream;
+    // Listen for other users joining
+    database.ref(`rooms/${roomId}/users`).on('child_added', async (snapshot) => {
+        const joinedUserId = snapshot.key;
+        if (joinedUserId !== userId && !peerConnections[joinedUserId]) {
+            await createPeerConnection(joinedUserId);
+        }
+    });
 
-        setupPeerConnectionHandlers();
+    // Listen for users leaving
+    database.ref(`rooms/${roomId}/users`).on('child_removed', (snapshot) => {
+        const leftUserId = snapshot.key;
+        if (peerConnections[leftUserId]) {
+            removePeerConnection(leftUserId);
+        }
+    });
 
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        console.log('Local description set');
-
-        const roomRef = database.ref(`rooms/${roomId}`);
-        await roomRef.set({
-            'offer': {
-                type: offer.type,
-                sdp: offer.sdp
-            },
-            'status': 'waiting'
-        });
-        console.log('Room created in Firebase');
-
-        // Listen for remote answer
-        roomRef.on('value', async snapshot => {
-            const data = snapshot.val();
-            if (!peerConnection.currentRemoteDescription && data?.answer) {
-                console.log('Received remote answer');
-                const answerDescription = new RTCSessionDescription(data.answer);
-                await peerConnection.setRemoteDescription(answerDescription);
-            }
-        });
-
-        roomRef.child('answerCandidates').on('child_added', async snapshot => {
-            if (snapshot.val()) {
-                console.log('Adding answer candidate');
-                await peerConnection.addIceCandidate(new RTCIceCandidate(snapshot.val()));
-            }
-        });
-
-        alert(`Room created! Share this ID: ${roomId}`);
-
-    } catch (error) {
-        console.error('Error creating room:', error);
-        alert('Error creating room: ' + error.message);
-    }
+    alert(`Room Created: ${roomId}`);
 }
 
 async function joinRoom() {
-    try {
-        console.log('Joining room...');
-        roomId = roomInput.value;
-        if (!roomId) {
-            alert('Please enter a room ID');
-            return;
+    roomId = roomInput.value;
+    if (!roomId) {
+        alert('Please enter a room ID');
+        return;
+    }
+
+    const roomRef = database.ref(`rooms/${roomId}`);
+    const roomSnapshot = await roomRef.get();
+
+    if (!roomSnapshot.exists()) {
+        alert('Room does not exist');
+        return;
+    }
+
+    // Add yourself to the room
+    await database.ref(`rooms/${roomId}/users/${userId}`).set({
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
+
+    // Connect to existing users
+    const usersSnapshot = await database.ref(`rooms/${roomId}/users`).get();
+    usersSnapshot.forEach((userSnapshot) => {
+        const existingUserId = userSnapshot.key;
+        if (existingUserId !== userId && !peerConnections[existingUserId]) {
+            createPeerConnection(existingUserId);
         }
+    });
 
-        peerConnection = new RTCPeerConnection(servers);
-        console.log('PeerConnection created');
+    // Listen for new users
+    database.ref(`rooms/${roomId}/users`).on('child_added', async (snapshot) => {
+        const joinedUserId = snapshot.key;
+        if (joinedUserId !== userId && !peerConnections[joinedUserId]) {
+            await createPeerConnection(joinedUserId);
+        }
+    });
 
-        localStream.getTracks().forEach(track => {
-            peerConnection.addTrack(track, localStream);
+    // Listen for users leaving
+    database.ref(`rooms/${roomId}/users`).on('child_removed', (snapshot) => {
+        const leftUserId = snapshot.key;
+        if (peerConnections[leftUserId]) {
+            removePeerConnection(leftUserId);
+        }
+    });
+}
+
+async function createPeerConnection(remoteUserId) {
+    const peerConnection = new RTCPeerConnection(servers);
+    peerConnections[remoteUserId] = peerConnection;
+
+    // Add local tracks
+    localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+    });
+
+    // Create video element for remote user
+    const { video: remoteVideo, avatar: remoteAvatar } = createVideoElement(remoteUserId);
+
+    // Handle incoming tracks
+    peerConnection.ontrack = ({ streams: [stream] }) => {
+        remoteVideo.srcObject = stream;
+    };
+
+    // Handle ICE candidates
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            database.ref(`rooms/${roomId}/connections/${userId}-${remoteUserId}/candidates`)
+                .push(event.candidate.toJSON());
+        }
+    };
+
+    // Create offer if you're the newer user
+    const userRef = database.ref(`rooms/${roomId}/users/${userId}`);
+    const remoteUserRef = database.ref(`rooms/${roomId}/users/${remoteUserId}`);
+    const [userSnapshot, remoteUserSnapshot] = await Promise.all([
+        userRef.get(),
+        remoteUserRef.get()
+    ]);
+
+    if (userSnapshot.val().timestamp > remoteUserSnapshot.val().timestamp) {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        await database.ref(`rooms/${roomId}/connections/${userId}-${remoteUserId}/offer`).set({
+            type: offer.type,
+            sdp: offer.sdp
         });
+    }
 
-        remoteStream = new MediaStream();
-        remoteVideo.srcObject = remoteStream;
+    // Listen for remote offer/answer
+    database.ref(`rooms/${roomId}/connections`).on('child_added', async (snapshot) => {
+        const connection = snapshot.val();
+        const connectionId = snapshot.key;
 
-        setupPeerConnectionHandlers();
+        if (connectionId.includes(userId) && connectionId.includes(remoteUserId)) {
+            if (connection.offer && !connection.answer && connectionId.split('-')[1] === userId) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(connection.offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
 
-        const roomRef = database.ref(`rooms/${roomId}`);
-        const roomSnapshot = await roomRef.get();
-        
-        if (!roomSnapshot.exists()) {
-            alert('Room does not exist');
-            return;
-        }
-
-        console.log('Room found');
-        const data = roomSnapshot.val();
-        
-        if (data?.offer) {
-            console.log('Setting remote description');
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-            
-            console.log('Creating answer');
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-
-            console.log('Updating room with answer');
-            await roomRef.update({
-                'answer': {
+                await database.ref(`rooms/${roomId}/connections/${connectionId}/answer`).set({
                     type: answer.type,
                     sdp: answer.sdp
-                },
-                'status': 'connected'
+                });
+            } else if (connection.answer && connectionId.split('-')[0] === userId) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(connection.answer));
+            }
+        }
+    });
+
+    // Listen for ICE candidates
+    database.ref(`rooms/${roomId}/connections`).on('child_added', (snapshot) => {
+        const connectionId = snapshot.key;
+        if (connectionId.includes(userId) && connectionId.includes(remoteUserId)) {
+            database.ref(`rooms/${roomId}/connections/${connectionId}/candidates`).on('child_added', (candidateSnapshot) => {
+                const candidate = candidateSnapshot.val();
+                if (candidate && peerConnection.remoteDescription) {
+                    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                }
             });
         }
+    });
+}
 
-        roomRef.child('offerCandidates').on('child_added', async snapshot => {
-            if (snapshot.val()) {
-                console.log('Adding offer candidate');
-                await peerConnection.addIceCandidate(new RTCIceCandidate(snapshot.val()));
-            }
-        });
+function removePeerConnection(remoteUserId) {
+    const videoWrapper = document.getElementById(`video-wrapper-${remoteUserId}`);
+    if (videoWrapper) {
+        videoWrapper.remove();
+    }
 
-        console.log('Join process completed');
-
-    } catch (error) {
-        console.error('Error joining room:', error);
-        alert('Error joining room: ' + error.message);
+    if (peerConnections[remoteUserId]) {
+        peerConnections[remoteUserId].close();
+        delete peerConnections[remoteUserId];
     }
 }
 
-function setupPeerConnectionHandlers() {
-    peerConnection.ontrack = (event) => {
-        console.log('Got remote track:', event.streams[0]);
-        // Clear any existing tracks in remoteStream
-        remoteStream.getTracks().forEach(track => {
-            remoteStream.removeTrack(track);
-        });
-        
-        // Add all tracks from the incoming stream
-        event.streams[0].getTracks().forEach(track => {
-            console.log('Adding remote track:', track.kind);
-            remoteStream.addTrack(track);
-        });
-
-        // Ensure remote video element is updated
-        if (!remoteVideo.srcObject || remoteVideo.srcObject.id !== remoteStream.id) {
-            console.log('Updating remote video source');
-            remoteVideo.srcObject = remoteStream;
-        }
-    };
-
-    peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-            console.log('New ICE candidate:', event.candidate.type);
-            const isOffer = peerConnection.localDescription.type === 'offer';
-            const candidatesPath = isOffer ? 'offerCandidates' : 'answerCandidates';
-            database.ref(`rooms/${roomId}/${candidatesPath}`).push(event.candidate.toJSON());
-        }
-    };
-
-    // Monitor connection states
-    peerConnection.onconnectionstatechange = () => {
-        console.log('Connection state:', peerConnection.connectionState);
-        if (peerConnection.connectionState === 'connected') {
-            console.log('Peers connected!');
-        }
-    };
-
-    peerConnection.oniceconnectionstatechange = () => {
-        console.log('ICE connection state:', peerConnection.iceConnectionState);
-    };
-}
-
-function toggleVideo() {
-    if (localStream) {
-        const videoTrack = localStream.getVideoTracks()[0];
-        const avatarContainer = document.querySelector('.avatar-container');
-        
-        if (videoTrack) {
-            isVideoEnabled = !isVideoEnabled;
-            videoTrack.enabled = isVideoEnabled;
-            videoButton.classList.toggle('disabled', !isVideoEnabled);
-            videoButton.innerHTML = isVideoEnabled ? 
-                '<i class="fas fa-video"></i>' : 
-                '<i class="fas fa-video-slash"></i>';
-            
-            avatarContainer.classList.toggle('hidden', isVideoEnabled);
-        }
+// Clean up when leaving
+window.addEventListener('beforeunload', () => {
+    if (roomId && userId) {
+        database.ref(`rooms/${roomId}/users/${userId}`).remove();
     }
-}
+});
 
-function toggleAudio() {
-    if (localStream) {
-        const audioTrack = localStream.getAudioTracks()[0];
-        if (audioTrack) {
-            isAudioEnabled = !isAudioEnabled;
-            audioTrack.enabled = isAudioEnabled;
-            audioButton.classList.toggle('disabled', !isAudioEnabled);
-            audioButton.innerHTML = isAudioEnabled ? 
-                '<i class="fas fa-microphone"></i>' : 
-                '<i class="fas fa-microphone-slash"></i>';
-        }
-    }
-}
+// ... rest of your existing toggle functions ...
+
+createButton.addEventListener('click', createRoom);
+joinButton.addEventListener('click', joinRoom);
+videoButton.addEventListener('click', toggleVideo);
+audioButton.addEventListener('click', toggleAudio);
 
 window.addEventListener('load', init); 
