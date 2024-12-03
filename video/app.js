@@ -1,3 +1,50 @@
+// Fun "system breach" console messages
+let progress = 0;
+let interval;
+const hackingStyle = 'color: #0f0; font-size: 16px; font-family: monospace; background: #000;';
+const warningStyle = 'color: #ff0000; font-size: 40px; font-weight: bold; text-shadow: 2px 2px #000;';
+
+const displayMessage = () => {
+    console.clear();
+    console.log(`%c
+⚠️ SYSTEM BREACH DETECTED ⚠️
+`, warningStyle);
+
+    if (progress <= 100) {
+        console.log(`%cHACKING IN PROGRESS... [${'█'.repeat(progress / 10)}${'.'.repeat(10 - progress / 10)}] ${progress}%`, hackingStyle);
+    } else {
+        console.log(`%c
+🚨 JUST KIDDING! 🚨
+You've been caught red-handed in the console!
+
+Here's the funny part: You're now...
+- The proud owner of 0 bitcoins! 🪙
+- The CEO of a fictional company! 🏢
+- The ruler of an imaginary kingdom! 👑
+
+But seriously, don't paste code here unless you want your computer to start singing opera! 🎶
+
+Stay safe,
+Your Friendly Neighborhood Developer
+`, 'color: #ff0000; font-size: 14px; font-weight: bold;');
+    }
+};
+
+const updateProgress = () => {
+    if (progress <= 100) {
+        displayMessage();
+        progress += 10;
+    } else {
+        clearInterval(interval);
+        displayMessage();
+    }
+};
+
+interval = setInterval(updateProgress, 200);
+
+// Re-display message when console is opened
+window.addEventListener('focus', displayMessage);
+
 let localStream;
 let peerConnection;
 let roomId;

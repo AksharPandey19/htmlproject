@@ -203,6 +203,14 @@ A collection of interactive web applications and games showcasing various web te
 66. **Rock Paper Scissors Ultimate**
     - Classic game with AI and multiplayer
 
+67. **Video Chat**
+    - Video chat application    
+
+68. **Party Planner**
+    - Party planning application
+69. **Image Generator**
+    - Image generation application
+
 ## 📱 Contact
 
 - Email: [akshar.nanu@gmail.com](mailto:akshar.nanu@gmail.com)
