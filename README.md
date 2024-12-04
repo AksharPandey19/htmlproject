@@ -210,7 +210,10 @@ A collection of interactive web applications and games showcasing various web te
     - Party planning application
 69. **Image Generator**
     - Image generation application
-
+70. **Hangman Game**
+    - Guess the word
+71. **Calculator**
+    - Just a Calculator
 ## 📱 Contact
 
 - Email: [akshar.nanu@gmail.com](mailto:akshar.nanu@gmail.com)
