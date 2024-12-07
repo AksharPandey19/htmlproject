@@ -214,6 +214,18 @@ A collection of interactive web applications and games showcasing various web te
     - Guess the word
 71. **Calculator**
     - Just a Calculator
+72. **BMI Calculator**
+    - IDK
+73. **Google Dino Game**
+    - A Clone Google
+74. **Expense Tracker**
+    - Check Your Expense(Is it High OR low)
+75. **Jokes Generator**
+    - We need good jokes
+76. **Number Guess**
+    - IDK
+
+
 ## 📱 Contact
 
 - Email: [akshar.nanu@gmail.com](mailto:akshar.nanu@gmail.com)
