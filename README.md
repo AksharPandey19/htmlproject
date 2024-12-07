@@ -224,7 +224,16 @@ A collection of interactive web applications and games showcasing various web te
     - We need good jokes
 76. **Number Guess**
     - IDK
-
+77. **Flappy Bird**
+    - Classic
+78. **Resume Builder**
+    - Why Do you like to make it here
+79. **Markdown Maker**
+    - What is Markdown(.md)
+80. **Reaction Time**
+    - You Think Your F1 driver
+81. **Strengh of Password**
+    - What lets see your password is good
 
 ## 📱 Contact
 
