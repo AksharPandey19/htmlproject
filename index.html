@@ -247,131 +247,98 @@ animation-fill-mode: forwards;
   content: 'Developer';
 }
 
-14% {
+15% {
   content: 'Developer';
 }
-15% {
+16% {
   content: 'Develope';
 }
-16% {
+17% {
   content: 'Develop';
 }
-17% {
+18% {
   content: 'Develo';
 }
-18% {
+19% {
   content: 'Devel';
 }
-19% {
+21% {
   content: 'Deve';
 }
-20% {
+22% {
   content: 'Dev';
 }
-21% {
+24% {
   content: 'D';
 }
 
-22% {
+28% {
   content: 'A';
 }
-23% {
+33% {
   content: 'Ap';
 }
-24% {
+34% {
   content: 'App';
 }
-25% {
-  content: 'App ';
-}
-26% {
-  content: 'App B';
-}
-27% {
-  content: 'App Bu';
-}
-28% {
-  content: 'App Bui';
-}
-29% {
-  content: 'App Buil';
-}
-30% {
-  content: 'App Build';
-}
-31% {
-  content: 'App Builde';
-}
-32% {
-  content: 'App Builder';
-}
-
-38% {
-  content: 'App Builder';
-}
-39% {
-  content: 'App Builde';
-}
 40% {
-  content: 'App Build';
-}
-41% {
-  content: 'App Bui';
-}
-42% {
-  content: 'App Bu';
-}
-43% {
-  content: 'App B';
-}
-44% {
   content: 'App ';
 }
 45% {
-  content: 'App';
+  content: 'App B';
 }
-46% {
-  content: 'Ap';
-}
-47% {
-  content: 'A';
-}
-
 50% {
-  content: '';
+  content: 'App Bu';
 }
-
+55% {
+  content: 'App Bui';
+}
 60% {
-  content: 'D';
-}
-61% {
-  content: 'De';
-}
-62% {
-  content: 'Dev';
-}
-63% {
-  content: 'Deve';
-}
-64% {
-  content: 'Devel';
+  content: 'App Buil';
 }
 65% {
-  content: 'Develo';
+  content: 'App Build';
 }
-66% {
-  content: 'Develop';
+70% {
+  content: 'App Builde';
 }
-67% {
-  content: 'Developer';
-}
-
-99% {
+75% {
   content: 'App Builder';
 }
 
+80% {
+  content: 'App Builder';
+}
+81% {
+  content: 'App Builde';
+}
+82% {
+  content: 'App Build';
+}
+83% {
+  content: 'App Bui';
+}
+85% {
+  content: 'App Bu';
+}
+86% {
+  content: 'App B';
+}
+90% {
+  content: 'App ';
+}
+95% {
+  content: 'App';
+}
+96% {
+  content: 'Ap';
+}
+97% {
+  content: 'A';
+}
+
 100% {
-  content: 'App Builder.';
+  content: '';
 }
 }
 .loader-text {
@@ -1022,8 +989,8 @@ position: relative;
       </div>
       
       <div class="intro">
-        
-          <h2 class="big-heading">Welcome to My Portfolio</h2>
+        <h2 class="big-heading" id="greetings"></h2>
+          <h2 class="sub-heading">Welcome to My Portfolio</h2>
           <p class="sub-heading">Discover my work and projects.</p><div class="typewriter">I am a </div><p></p>
           <br><br>
           <a href="#projects"><button>My Work<div class="star-1">
@@ -1566,6 +1533,37 @@ position: relative;
   </h3>                <p>idk</p>
   <a href="Pomderdo/index.html" class="shiny-cta">View Project</a>
 </div>
+<div class="project-card">  
+  <h3>Project 84: Drum Kit
+  </h3>                <p>If NOt have in real life this is right place</p>
+  <a href="drumkit/index.html" class="shiny-cta">View Project</a>
+</div>
+<div class="project-card">  
+  <h3>Project 85: Roll Dice
+  </h3>                <p>No Comments :/</p>
+  <a href="dicerool/index.html" class="shiny-cta">View Project</a>
+</div>
+<div class="project-card">  
+  <h3>Project 86: Loan Calculator
+  </h3>                <p>Please Check with your bank loan Calculator</p>
+  <a href="loan/index.html" class="shiny-cta">View Project</a>
+</div>
+<div class="project-card">  
+  <h3>Project 87: TIme Table
+  </h3>                <p>Are you bad at maths</p>
+  <a href="timetable/index.html" class="shiny-cta">View Project</a>
+</div>
+<div class="project-card">  
+  <h3>Project 88: Age Calculator
+  </h3>                <p>Your age</p>
+  <a href="age/index.html" class="shiny-cta">View Project</a>
+</div>
+<div class="project-card">  
+  <h3>Project 89: Population Chart
+  </h3>                <p>It is not correct.</p>
+  <a href="population/index.html" class="shiny-cta">View Project</a>
+</div>
+
       </div></section>
       <section id="contact" class="contact-section">
           <h2>Contact Me</h2>
@@ -1631,7 +1629,19 @@ if (timeRemaining <= 0) {
 
 // Update the countdown every second
 setInterval(updateCountdown, 1000);
+var myDate = new Date();
+var hrs = myDate.getHours();
 
+var greet;
+
+if (hrs < 12)
+  greet = 'Good Morning';
+else if (hrs >= 12 && hrs <= 17)
+  greet = 'Good Afternoon';
+else if (hrs >= 17 && hrs <= 24)
+  greet = 'Good Evening';
+
+document.getElementById('greetings').innerHTML = greet + ",";
 
 </script>
 
