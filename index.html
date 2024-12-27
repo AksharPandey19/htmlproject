@@ -1037,7 +1037,14 @@ else if (hrs >= 17 && hrs <= 24)
   greet = 'Good Evening';
 
 document.getElementById('greetings').innerHTML = greet + ",";
+if (!navigator.onLine) {
+      window.location.href = 'offline.html';
+    }
 
+    // Redirect to offline page when the user goes offline
+    window.addEventListener('offline', () => {
+      window.location.href = 'offline.html';
+    });
 </script>
 
 
