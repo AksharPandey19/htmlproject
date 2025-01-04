@@ -1,0 +1,10 @@
+{
+    "name": "My Offline Webpage",
+    "short_name": "Offline Web",
+    "description": "A simple offline webpage example",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#000000"
+  }
+  
