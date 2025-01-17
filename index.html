@@ -1070,6 +1070,11 @@ animation-fill-mode: forwards;
   </h3>                <p>Did i make this earlier idk Déjà Vu i guess?</p>
   <a href="live/" class="shiny-cta">View Project</a>
 </div>
+<div class="project-card">  
+  <h3>Project 114: Fextify
+  </h3>                <p class="h">Notepad Clone</p>
+  <a href="./notepad.exe" download="./notepad.exe"  class="shiny-cta a">View Project</a>
+</div>
       </div></section>
       <section id="contact" class="contact-section">
           <h2>Contact Me</h2>
@@ -1088,6 +1093,27 @@ animation-fill-mode: forwards;
       });
       document.getElementById("year").innerHTML = new Date().getFullYear();
     
+  </script>
+  <script>
+const userAgent = navigator.userAgent;
+
+// Detect OS and update styles and text
+if (userAgent.indexOf('Mac') !== -1 || userAgent.indexOf('Linux') !== -1) {
+  // Get elements with class 'a'
+  const aElements = document.body.getElementsByClassName('a');
+  for (let element of aElements) {
+    element.style.pointerEvents = 'none'; // Disable pointer events
+  }
+
+  // Get elements with class 'h'
+  const hElements = document.body.getElementsByClassName('h');
+  for (let element of hElements) {
+    element.textContent = 'You have macOS or Linux. You cannot download it.';
+  }
+} else {
+  // Get elements with class 'h'
+}
+
   </script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
