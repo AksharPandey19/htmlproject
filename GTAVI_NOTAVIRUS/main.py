@@ -1,39 +1,45 @@
-from direct.showbase.ShowBase import ShowBase
-from panda3d.core import WindowProperties, FrameBufferProperties, TextNode
-from panda3d.core import Vec4
+import tkinter as tk
+import datetime as timeaurdin
 
-class TransparentWindow(ShowBase):
-    def __init__(self):
-        # Disable default window creation
-        super().__init__(windowType='none')
+root = tk.Tk()
 
-        # Configure framebuffer for transparency
-        fb_props = FrameBufferProperties()
-        fb_props.set_alpha_bits(8)  # Enable alpha channel in framebuffer
+# Get the screen width and height
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
 
-        # Configure window properties
-        wp = WindowProperties()
-        wp.set_undecorated(True)    # Remove window decorations
-        wp.set_size(400, 300)       # Set window size
-        wp.set_origin(100, 100)     # Set window position
+# Set the window size (for example, 450x100)
+window_width = 450
+window_height = 100
 
-        # Open window with custom properties
-        self.openDefaultWindow(props=wp, fbf=fb_props)
+# Calculate the position for the top-right corner
+x_position = screen_width - window_width
+y_position = 0
 
-        # Set transparent background
-        self.setBackgroundColor(Vec4(0, 0, 0, 0))  # RGBA (alpha=0)
+# Set the window geometry (position + size)
+root.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")
+root.title("")
+root.configure(bg="beige")  # Match transparent color
+root.wm_overrideredirect(1)
+root.wm_attributes("-topmost", True)
+root.wm_attributes("-transparentcolor", "beige")
 
-        # Add text to verify visibility
-        self.text = TextNode("transparent_text")
-        self.text.setText("Transparent Window\n(Panda3D)")
-        self.text.setTextColor(1, 1, 1, 1)  # White text
-        text_node = self.aspect2d.attachNewNode(self.text)
-        text_node.set_pos(-0.5, 0, 0.2)
-        text_node.set_scale(0.1)
+# Create the labels for time and date with a transparent background
+lbl = tk.Label(root, fg="white", bg="beige", font=("Segoe UI", 32, "bold"))
+lbl.place(relx=0, rely=0, relheight=0.5, relwidth=1.3)
 
-        # Disable default camera controls
-        self.disableMouse()
+nbl = tk.Label(root, fg="white", bg="beige", font=("Segoe UI", 20))
+nbl.place(relx=0, rely=0.5, relheight=0.5, relwidth=1.3)
 
-# Run the application
-app = TransparentWindow()
-app.run()
+def UpdateTimeaurDin():
+    datenow = timeaurdin.datetime.now()
+    time_str = datenow.strftime("%I:%M:%S %p")  # 12-hour format for time
+    date_str = datenow.strftime("%A, %B %d, %Y")  # Full date format
+
+    lbl.configure(text=time_str)
+    nbl.configure(text=date_str)
+
+    root.after(1000, UpdateTimeaurDin)  # Update every 1 second
+
+UpdateTimeaurDin()
+
+root.mainloop()
