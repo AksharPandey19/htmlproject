@@ -1147,10 +1147,16 @@ animation-fill-mode: forwards;
   <a href="https://not-13.vercel.app" class="shiny-cta">View Project</a>
 </div>
 <div class="project-card">  
-  <h3>Project 127: Badluck Butter Chicken
+  <h3>Project 127: Badluck Butter Chicken episode 1
   </h3>                <p>Just a game</p>
     </p>
   <a href="Badluck Butter Chicken/episode 1/" class="shiny-cta">View Project</a>
+</div>
+<div class="project-card">  
+  <h3>Project 127: Economy of Motion
+  </h3>                <p>Finish the level without moving 13 times</p>
+    </p>
+  <a href="Economy of Motion/index.html" class="shiny-cta">View Project</a>
 </div>
       </div></section>
       <section id="contact" class="contact-section">
@@ -1231,14 +1237,16 @@ else if (hrs >= 17 && hrs <= 24)
   greet = 'Good Evening';
 
 document.getElementById('greetings').innerHTML = greet + ",";
-if (!navigator.onLine) {
-      window.location.href = 'offline.html';
-    }
-
-    // Redirect to offline page when the user goes offline
-    window.addEventListener('offline', () => {
-      window.location.href = 'offline.html';
-    });
+// Register the service worker
+if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('./sw.js').then(function(registration) {
+		    // Registration was successful
+		    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+		}).catch(function(err) {
+		    // registration failed :(
+		    	console.log('ServiceWorker registration failed: ', err);
+		    });
+      }
 </script>
 
 
